@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import locale
 import matplotlib
+matplotlib.use('Agg')
 matplotlib.rcParams['axes.formatter.use_locale'] = True
 from matplotlib.dates import DateFormatter
 
