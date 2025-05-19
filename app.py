@@ -6,19 +6,14 @@ import requests
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
-import locale
+import pytz
 from matplotlib.dates import DateFormatter
 import matplotlib
 
 matplotlib.use('Agg')
 app = Flask(__name__)
 
-# Configurações de localização
-try:
-    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
-except:
-    locale.setlocale(locale.LC_ALL, 'Portuguese_Brazil.1252')
-
+# Dicionários de dados
 MOEDAS = {
     '1': {'nome': 'Dólar Americano', 'sigla': 'USD', 'simbolo': 'US$'},
     '2': {'nome': 'Euro', 'sigla': 'EUR', 'simbolo': '€'},
@@ -46,7 +41,7 @@ def obter_cotacao_atual(moeda_info):
                 'comercial': comercial,
                 'turismo': turismo,
                 'media': (comercial + turismo) / 2,
-                'atualizacao': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+                'atualizacao': datetime.now(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M:%S')
             }
         return None
     except Exception as e:
@@ -77,12 +72,10 @@ def plot_to_base64(df):
     ax = plt.gca()
     ax.set_facecolor('#1a1a1a')
     
-    # Plotar as três linhas
     plt.plot(df['data'], df['comercial'], label='Comercial', color='#3498db', linewidth=2)
     plt.plot(df['data'], df['turismo'], label='Turismo', color='#e74c3c', linewidth=2)
     plt.plot(df['data'], df['media'], label='Média', color='#2ecc71', linewidth=2, linestyle='--')
     
-    # Configurações do gráfico
     plt.title('Evolução das Cotações', color='white', pad=20)
     plt.xlabel('Data', color='white')
     plt.ylabel('Valor (R$)', color='white')
@@ -91,7 +84,6 @@ def plot_to_base64(df):
     plt.gca().xaxis.set_major_formatter(DateFormatter('%d/%b/%y'))
     plt.grid(color='#2d2d2d', alpha=0.5)
     
-    # Legenda com estilo noturno
     legend = plt.legend(facecolor='#2d2d2d', edgecolor='none')
     for text in legend.get_texts():
         text.set_color('white')
