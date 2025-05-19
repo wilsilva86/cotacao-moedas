@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cotação de Moedas</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        select { width: 100%; padding: 8px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Consulta de Cotações</h1>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="POST">
+        <div class="form-group">
+            <label>Selecione a moeda:</label>
+            <select name="moeda">
+                {% for key, moeda in moedas.items() %}
+                <option value="{{ key }}">{{ moeda.nome }} ({{ moeda.simbolo }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Selecione o período:</label>
+            <select name="periodo">
+                {% for key, periodo in periodos.items() %}
+                <option value="{{ key }}">{{ periodo.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit">Consultar</button>
+    </form>
+</body>
+</html>
