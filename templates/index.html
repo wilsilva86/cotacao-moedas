@@ -1,39 +1,283 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>Cotação de Moedas</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisador de Moedas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; }
-        select { width: 100%; padding: 8px; }
-        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
-        .error { color: red; }
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --error: #e74c3c;
+            --text: #ffffff;
+            --text-secondary: #b3b3b3;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .title {
+            color: var(--primary);
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .card {
+            background: #2d2d2d;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: transform 0.2s;
+            border: 1px solid #3d3d3d;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+        }
+
+        input[type="radio"]:checked + .card {
+            border-color: var(--primary);
+            background: #2d3d4d;
+        }
+
+        .card-content {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .icon {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        .valor {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .destaque {
+            color: var(--secondary);
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 2rem;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .info-box {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: #2d2d2d;
+            border-radius: 8px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            color: var(--text-secondary);
+            border-top: 1px solid #3d3d3d;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .title {
+                font-size: 1.5rem;
+            }
+            
+            .card {
+                padding: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>Consulta de Cotações</h1>
-    {% if error %}<p class="error">{{ error }}</p>{% endif %}
-    <form method="POST">
-        <div class="form-group">
-            <label>Selecione a moeda:</label>
-            <select name="moeda">
-                {% for key, moeda in moedas.items() %}
-                <option value="{{ key }}">{{ moeda.nome }} ({{ moeda.simbolo }})</option>
-                {% endfor %}
-            </select>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">
+                <i class="fas fa-chart-line"></i>
+                Cotação de moedas
+            </h1>
         </div>
-        
-        <div class="form-group">
-            <label>Selecione o período:</label>
-            <select name="periodo">
-                {% for key, periodo in periodos.items() %}
-                <option value="{{ key }}">{{ periodo.nome }}</option>
-                {% endfor %}
-            </select>
+
+        {% if error %}
+        <div class="card" style="border-color: var(--error);">
+            <div class="card-content">
+                <i class="icon fas fa-exclamation-triangle" style="color: var(--error);"></i>
+                <div>
+                    <h3 style="color: var(--error);">Atenção:</h3>
+                    <p>{{ error }}</p>
+                </div>
+            </div>
         </div>
-        
-        <button type="submit">Consultar</button>
-    </form>
+        {% endif %}
+
+        <form method="POST">
+            <!-- Seção Moedas -->
+            <div style="margin: 2rem 0;">
+                <h3 style="color: var(--primary); margin-bottom: 1rem;">Selecione a Moeda</h3>
+                <div class="grid">
+                    {% for key, moeda in moedas.items() %}
+                    <label>
+                        <input type="radio" name="moeda" value="{{ key }}" hidden>
+                        <div class="card">
+                            <div class="card-content">
+                                <i class="icon fas {{
+                                    'fa-dollar-sign' if moeda.sigla == 'USD'
+                                    else 'fa-euro-sign' if moeda.sigla == 'EUR'
+                                    else 'fa-sterling-sign'
+                                }}"></i>
+                                <div>
+                                    <div class="valor">{{ moeda.nome }}</div>
+                                    <div style="color: var(--text-secondary);">{{ moeda.simbolo }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Seção Períodos -->
+            <div style="margin: 2rem 0;">
+                <h3 style="color: var(--primary); margin-bottom: 1rem;">Selecione o Período</h3>
+                <div class="grid">
+                    {% for key, periodo in periodos.items() %}
+                    <label>
+                        <input type="radio" name="periodo" value="{{ key }}" hidden>
+                        <div class="card">
+                            <div class="card-content">
+                                <i class="icon fas fa-calendar-alt"></i>
+                                <div>
+                                    <div class="valor">{{ periodo.nome }}</div>
+                                    <div style="color: var(--text-secondary);">{{ periodo.dias }} dias</div>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button type="submit">
+                <i class="fas fa-chart-bar"></i>
+                Gerar Análise
+            </button>
+        </form>
+
+        {% if cotacao %}
+        <div class="info-box">
+            <h3 style="color: var(--primary); margin-bottom: 1.5rem;">Cotações Atuais</h3>
+            <div class="grid" style="gap: 1rem;">
+                <div class="card">
+                    <div class="card-content">
+                        <i class="icon fas fa-building"></i>
+                        <div>
+                            <div style="color: var(--text-secondary);">Comercial</div>
+                            <div class="valor">R$ {{ "%.3f"|format(cotacao.comercial)|replace(".", ",") }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-content">
+                        <i class="icon fas fa-suitcase-rolling"></i>
+                        <div>
+                            <div style="color: var(--text-secondary);">Turismo</div>
+                            <div class="valor">R$ {{ "%.3f"|format(cotacao.turismo)|replace(".", ",") }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="border-color: var(--secondary);">
+                    <div class="card-content">
+                        <i class="icon fas fa-balance-scale" style="color: var(--secondary);"></i>
+                        <div>
+                            <div style="color: var(--text-secondary);">Média</div>
+                            <div class="valor destaque">R$ {{ "%.3f"|format(cotacao.media)|replace(".", ",") }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if graph %}
+        <div class="info-box">
+            <h3 style="color: var(--primary); margin-bottom: 1.5rem;">Análise Histórica</h3>
+            <img src="data:image/png;base64,{{ graph }}" alt="Gráfico" style="width:100%; border-radius: 8px;">
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            <p>Desenvolvido por William Silva</p>
+            <p>
+                <i class="fas fa-envelope"></i>
+                <a href="mailto:wilsilva@duck.com" style="color: var(--primary); text-decoration: none;">
+                    wilsilva@duck.com
+                </a>
+            </p>
+            {% if atualizacao %}
+            <p style="margin-top: 1rem;">
+                <i class="fas fa-sync-alt"></i>
+                Última atualização: {{ atualizacao }}
+            </p>
+            {% endif %}
+        </div>
+    </div>
 </body>
 </html>

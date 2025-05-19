@@ -1,3 +1,4 @@
+import os
 import io
 import base64
 from flask import Flask, render_template, request
@@ -6,30 +7,24 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import locale
-import matplotlib
-matplotlib.use('Agg')
-matplotlib.rcParams['axes.formatter.use_locale'] = True
 from matplotlib.dates import DateFormatter
+import matplotlib
 
+matplotlib.use('Agg')
 app = Flask(__name__)
 
-# Configurar localização para formato brasileiro
+# Configurações de localização
 try:
     locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 except:
-    try:
-        locale.setlocale(locale.LC_ALL, 'Portuguese_Brazil.1252')  # Para Windows
-    except:
-        pass
+    locale.setlocale(locale.LC_ALL, 'Portuguese_Brazil.1252')
 
-# Dicionário de moedas disponíveis
 MOEDAS = {
     '1': {'nome': 'Dólar Americano', 'sigla': 'USD', 'simbolo': 'US$'},
     '2': {'nome': 'Euro', 'sigla': 'EUR', 'simbolo': '€'},
     '3': {'nome': 'Libra Esterlina', 'sigla': 'GBP', 'simbolo': '£'}
 }
 
-# Dicionário de períodos disponíveis
 PERIODOS = {
     '1': {'nome': '1 Mês', 'dias': 30},
     '2': {'nome': '3 Meses', 'dias': 90},
@@ -38,139 +33,110 @@ PERIODOS = {
 }
 
 def obter_cotacao_atual(moeda_info):
-    """Função para obter a cotação atual da moeda selecionada"""
     try:
         sigla = moeda_info['sigla']
-        url_comercial = f"https://economia.awesomeapi.com.br/json/last/{sigla}-BRL"
-        
-        response = requests.get(url_comercial)
+        url = f"https://economia.awesomeapi.com.br/json/last/{sigla}-BRL"
+        response = requests.get(url)
         
         if response.status_code == 200:
             dados = response.json()
-            chave_moeda = f"{sigla}BRL"
-            
-            cotacao_comercial = float(dados[chave_moeda]["bid"])
-            
-            try:
-                url_turismo = f"https://economia.awesomeapi.com.br/json/last/{sigla}-BRLT"
-                resp_turismo = requests.get(url_turismo)
-                
-                if resp_turismo.status_code == 200:
-                    dados_turismo = resp_turismo.json()
-                    chave_turismo = f"{sigla}BRLT"
-                    
-                    if chave_turismo in dados_turismo:
-                        cotacao_turismo = float(dados_turismo[chave_turismo]["bid"])
-                    else:
-                        cotacao_turismo = cotacao_comercial * 1.05
-                else:
-                    cotacao_turismo = cotacao_comercial * 1.05
-            except Exception:
-                cotacao_turismo = cotacao_comercial * 1.05
-            
-            media = (cotacao_comercial + cotacao_turismo) / 2
-            
+            comercial = float(dados[f"{sigla}BRL"]['bid'])
+            turismo = comercial * 1.05
             return {
-                "comercial": cotacao_comercial,
-                "turismo": cotacao_turismo,
-                "media": media
+                'comercial': comercial,
+                'turismo': turismo,
+                'media': (comercial + turismo) / 2,
+                'atualizacao': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
             }
-        else:
-            return None
+        return None
     except Exception as e:
-        print(f"Erro: {e}")
+        print(f"Erro na cotação atual: {e}")
         return None
 
-def obter_historico_moeda(moeda_info, dias=180):
-    """Função para obter o histórico de cotações dos últimos N dias"""
+def obter_historico_moeda(moeda_info, dias):
     try:
         sigla = moeda_info['sigla']
-        data_fim = datetime.now()
-        data_inicio = data_fim - timedelta(days=dias)
+        url = f"https://economia.awesomeapi.com.br/json/daily/{sigla}-BRL/{dias}"
+        response = requests.get(url)
         
-        url_comercial = f"https://economia.awesomeapi.com.br/json/daily/{sigla}-BRL/{dias}"
-        
-        resp_comercial = requests.get(url_comercial)
-        
-        if resp_comercial.status_code == 200:
-            dados_comercial = resp_comercial.json()
-            
-            df_comercial = pd.DataFrame(dados_comercial)
-            df_comercial['data'] = pd.to_datetime(df_comercial['timestamp'].astype(int), unit='s')
-            df_comercial['comercial'] = df_comercial['bid'].astype(float)
-            
-            df = df_comercial[['data', 'comercial']].sort_values('data')
+        if response.status_code == 200:
+            dados = response.json()
+            df = pd.DataFrame(dados)
+            df['data'] = pd.to_datetime(df['timestamp'], unit='s')
+            df['comercial'] = df['bid'].astype(float)
             df['turismo'] = df['comercial'] * 1.05
             df['media'] = (df['comercial'] + df['turismo']) / 2
-            
-            return df
-        else:
-            return None
+            return df.sort_values('data')
+        return None
     except Exception as e:
-        print(f"Erro histórico: {e}")
+        print(f"Erro no histórico: {e}")
         return None
 
-def plot_to_base64(df, moeda_info, periodo_info):
-    plt.switch_backend('Agg')
-    plt.figure(figsize=(12, 6))
+def plot_to_base64(df):
+    plt.figure(figsize=(10,6), facecolor='#1a1a1a')
+    ax = plt.gca()
+    ax.set_facecolor('#1a1a1a')
     
-    # Mantém as casas decimais originais
-    plt.plot(df['data'], df['media'], label='Média (Comercial/Turismo)', color='green', linewidth=2)
-    plt.plot(df['data'], df['comercial'], label=f"{moeda_info['nome']} Comercial", color='blue', alpha=0.6)
-    plt.plot(df['data'], df['turismo'], label=f"{moeda_info['nome']} Turismo", color='red', alpha=0.6)
+    # Plotar as três linhas
+    plt.plot(df['data'], df['comercial'], label='Comercial', color='#3498db', linewidth=2)
+    plt.plot(df['data'], df['turismo'], label='Turismo', color='#e74c3c', linewidth=2)
+    plt.plot(df['data'], df['media'], label='Média', color='#2ecc71', linewidth=2, linestyle='--')
     
-    plt.title(f'Cotação do {moeda_info["nome"]} - Últimos {periodo_info["nome"]}', fontsize=16)
-    plt.xlabel('Data', fontsize=12)
-    plt.ylabel('Valor em R$', fontsize=12)
+    # Configurações do gráfico
+    plt.title('Evolução das Cotações', color='white', pad=20)
+    plt.xlabel('Data', color='white')
+    plt.ylabel('Valor (R$)', color='white')
+    plt.xticks(rotation=45, color='#95a5a6')
+    plt.yticks(color='#95a5a6')
+    plt.gca().xaxis.set_major_formatter(DateFormatter('%d/%b/%y'))
+    plt.grid(color='#2d2d2d', alpha=0.5)
     
-    # Formatação do eixo Y com 3 casas decimais e vírgula
-    plt.gca().yaxis.set_major_formatter(plt.FormatStrFormatter('%.2f'))
-    plt.gca().yaxis.set_major_formatter(
-        plt.FuncFormatter(lambda x, _: locale.format_string('%.2f', x))
-    )
+    # Legenda com estilo noturno
+    legend = plt.legend(facecolor='#2d2d2d', edgecolor='none')
+    for text in legend.get_texts():
+        text.set_color('white')
     
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    
-    plt.gca().xaxis.set_major_formatter(DateFormatter('%d/%m/%Y'))
-    plt.xticks(rotation=45)
     plt.tight_layout()
     
     buffer = io.BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    image_base64 = base64.b64encode(buffer.getvalue()).decode()
+    plt.savefig(buffer, format='png', dpi=100, facecolor='#1a1a1a')
     plt.close()
-    
-    return image_base64
+    return base64.b64encode(buffer.getvalue()).decode('utf-8')
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    contexto = {
+        'moedas': MOEDAS,
+        'periodos': PERIODOS,
+        'error': None,
+        'cotacao': None,
+        'graph': None,
+        'atualizacao': None
+    }
+
     if request.method == 'POST':
         moeda_key = request.form.get('moeda')
         periodo_key = request.form.get('periodo')
-        
-        moeda_info = MOEDAS.get(moeda_key)
-        periodo_info = PERIODOS.get(periodo_key)
-        
-        if not moeda_info or not periodo_info:
-            return render_template('index.html', 
-                                 moedas=MOEDAS, 
-                                 periodos=PERIODOS, 
-                                 error="Selecione opções válidas!")
-        
-        cotacao_atual = obter_cotacao_atual(moeda_info)
-        historico = obter_historico_moeda(moeda_info, periodo_info['dias'])
-        
-        graph = plot_to_base64(historico, moeda_info, periodo_info) if historico is not None else None
-        
-        return render_template('resultado.html',
-                             moeda=moeda_info,
-                             periodo=periodo_info,
-                             cotacao=cotacao_atual,
-                             graph=graph)
-    
-    return render_template('index.html', moedas=MOEDAS, periodos=PERIODOS)
+
+        if not moeda_key or not periodo_key:
+            contexto['error'] = "Selecione a moeda e o período!"
+        else:
+            moeda = MOEDAS.get(moeda_key)
+            periodo = PERIODOS.get(periodo_key)
+            
+            if moeda and periodo:
+                contexto['cotacao'] = obter_cotacao_atual(moeda)
+                historico = obter_historico_moeda(moeda, periodo['dias'])
+                
+                if historico is not None:
+                    contexto['graph'] = plot_to_base64(historico)
+                    contexto['atualizacao'] = contexto['cotacao']['atualizacao'] if contexto['cotacao'] else None
+                else:
+                    contexto['error'] = "Erro ao obter dados históricos"
+            else:
+                contexto['error'] = "Opção inválida selecionada"
+
+    return render_template('index.html', **contexto)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
