@@ -1,6 +1,0 @@
-[build]
-  command = "gunicorn app:app"
-  publish = "/"
-
-[context.production.environment]
-  PYTHON_VERSION = "3.11"
