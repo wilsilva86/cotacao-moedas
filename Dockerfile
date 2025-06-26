@@ -1,7 +1,7 @@
-# Use uma imagem base oficial do Python
+# Use a imagem base oficial do Python
 FROM python:3.10-slim-bullseye
 
-# Definir variáveis de ambiente
+# Variáveis de ambiente
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
@@ -17,11 +17,11 @@ RUN apt-get update && \
 # Configurar diretório de trabalho
 WORKDIR /app
 
-# Copiar e instalar dependências Python
+# Copiar apenas requirements primeiro para cache eficiente
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar aplicação
+# Copiar o restante da aplicação
 COPY . .
 
 # Expor a porta
