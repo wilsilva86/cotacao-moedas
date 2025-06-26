@@ -1,4 +1,4 @@
-app = "app.py"
+app = "app"
 
 [build]
   builder = "dockerfile"
