@@ -1,4 +1,4 @@
-RUN mise settings set python_compile 1
+
 Flask==3.0.2
 requests==2.31.0
 pandas==2.2.2
