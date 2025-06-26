@@ -9,9 +9,13 @@ from datetime import datetime, timedelta
 import pytz
 from matplotlib.dates import DateFormatter
 import matplotlib
+import logging
 
 matplotlib.use('Agg')
 app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 # Dicionários de dados
 MOEDAS = {
@@ -45,14 +49,14 @@ def obter_cotacao_atual(moeda_info):
             }
         return None
     except Exception as e:
-        print(f"Erro na cotação atual: {e}")
+        logging.error(f"Erro na cotação atual: {e}")
         return None
 
 def obter_historico_moeda(moeda_info, dias):
     try:
         sigla = moeda_info['sigla']
         url = f"https://economia.awesomeapi.com.br/json/daily/{sigla}-BRL/{dias}"
-        response = requests.get(url)
+        response = requests.get(url, timeout=5)
         
         if response.status_code == 200:
             dados = response.json()
@@ -64,7 +68,7 @@ def obter_historico_moeda(moeda_info, dias):
             return df.sort_values('data')
         return None
     except Exception as e:
-        print(f"Erro no histórico: {e}")
+        logging.error(f"Erro no histórico: {e}")
         return None
 
 def plot_to_base64(df):
@@ -110,8 +114,8 @@ def index():
         moeda_key = request.form.get('moeda')
         periodo_key = request.form.get('periodo')
 
-        if not moeda_key or not periodo_key:
-            contexto['error'] = "Selecione a moeda e o período!"
+        if moeda_key not in MOEDAS or periodo_key not in PERIODOS:
+            contexto['error'] = "Opção inválida selecionada"
         else:
             moeda = MOEDAS.get(moeda_key)
             periodo = PERIODOS.get(periodo_key)
