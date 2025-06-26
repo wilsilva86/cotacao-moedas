@@ -1,9 +1,3 @@
-app = "cotacao-moedas"
-
 [build]
   build_env = { MISE_VERBOSE = "1" }
   pre_build = ".fly/scripts/prebuild.sh"
-
-[http_service]
-  internal_port = 5000
-  force_https = true
