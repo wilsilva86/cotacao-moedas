@@ -1,3 +1,9 @@
+app = "app.py"
+
 [build]
-  build_env = { MISE_VERBOSE = "1" }
-  pre_build = ".fly/scripts/prebuild.sh"
+  builder = "dockerfile"
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
