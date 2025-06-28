@@ -604,4 +604,85 @@
                 const response = await fetch(`/api/converter?origem=${origem}&destino=${destino}&valor=${valor}&tipo=${tipoTaxaAtual}`);
                 const data = await response.json();
 
-                if (data.
+                if (data.error) {
+                    document.getElementById('resultado-valor').textContent = 'Erro';
+                    document.getElementById('resultado-info').textContent = data.error;
+                } else {
+                    const simboloOrigem = getSimbolo(origem);
+                    const simboloDestino = getSimbolo(destino);
+                    
+                    document.getElementById('resultado-valor').textContent = 
+                        `${simboloDestino} ${data.resultado.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 4})}`;
+                    
+                    document.getElementById('resultado-info').textContent = 
+                        `${simboloOrigem} ${valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})} = ${simboloDestino} ${data.resultado.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 4})}`;
+                }
+            } catch (error) {
+                console.error('Erro na conversão:', error);
+                document.getElementById('resultado-valor').textContent = 'Erro';
+                document.getElementById('resultado-info').textContent = 'Erro ao converter. Tente novamente.';
+            }
+        }
+
+        // Função para obter símbolo da moeda
+        function getSimbolo(moeda) {
+            const simbolos = {
+                'BRL': 'R,
+                'USD': 'US,
+                'EUR': '€',
+                'GBP': '£'
+            };
+            return simbolos[moeda] || moeda;
+        }
+
+        // Função para trocar moedas de posição
+        function trocarMoedas() {
+            const origem = document.getElementById('moeda-origem').value;
+            const destino = document.getElementById('moeda-destino').value;
+            
+            document.getElementById('moeda-origem').value = destino;
+            document.getElementById('moeda-destino').value = origem;
+            
+            converter();
+        }
+
+        // Função para selecionar tipo de taxa
+        function selecionarTaxa(tipo) {
+            tipoTaxaAtual = tipo;
+            
+            // Atualizar botões
+            document.querySelectorAll('.taxa-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tipo="${tipo}"]`).classList.add('active');
+            
+            converter();
+        }
+
+        // Event listeners para os campos de input
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carregar cotações na inicialização
+            carregarCotacoes();
+            
+            // Auto-atualizar cotações a cada 30 segundos
+            setInterval(carregarCotacoes, 30000);
+            
+            // Event listeners para radio buttons
+            document.querySelectorAll('input[name="moeda"], input[name="periodo"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.checked) {
+                        this.nextElementSibling.style.borderColor = 'var(--primary)';
+                        this.nextElementSibling.style.background = '#2d3d4d';
+                        
+                        // Remove selection from siblings
+                        document.querySelectorAll(`input[name="${this.name}"]:not(:checked)`).forEach(other => {
+                            other.nextElementSibling.style.borderColor = '#3d3d3d';
+                            other.nextElementSibling.style.background = '#2d2d2d';
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -35,21 +35,37 @@ def obter_cotacao_atual(moeda_info):
     try:
         sigla = moeda_info['sigla']
         url = f"https://economia.awesomeapi.com.br/json/last/{sigla}-BRL"
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
+        
+        logging.info(f"Requisição para {url} - Status: {response.status_code}")
         
         if response.status_code == 200:
             dados = response.json()
-            comercial = float(dados[f"{sigla}BRL"]['bid'])
-            turismo = comercial * 1.05
-            return {
-                'comercial': comercial,
-                'turismo': turismo,
-                'media': (comercial + turismo) / 2,
-                'atualizacao': datetime.now(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M:%S')
-            }
+            chave_cotacao = f"{sigla}BRL"
+            
+            if chave_cotacao in dados:
+                comercial = float(dados[chave_cotacao]['bid'])
+                turismo = comercial * 1.05
+                return {
+                    'comercial': comercial,
+                    'turismo': turismo,
+                    'media': (comercial + turismo) / 2,
+                    'atualizacao': datetime.now(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M:%S')
+                }
+            else:
+                logging.error(f"Chave {chave_cotacao} não encontrada na resposta: {dados}")
+        else:
+            logging.error(f"Erro HTTP {response.status_code} para {url}")
+            
+        return None
+    except requests.exceptions.Timeout:
+        logging.error(f"Timeout na requisição para {sigla}")
+        return None
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Erro de requisição para {sigla}: {e}")
         return None
     except Exception as e:
-        logging.error(f"Erro na cotação atual: {e}")
+        logging.error(f"Erro na cotação atual para {sigla}: {e}")
         return None
 
 def obter_historico_moeda(moeda_info, dias):
@@ -83,6 +99,24 @@ def obter_todas_cotacoes():
                 'simbolo': moeda['simbolo'],
                 'nome': moeda['nome']
             }
+        else:
+            # Em caso de erro, usar valores padrão (apenas para demonstração)
+            logging.warning(f"Falha ao obter cotação para {moeda['sigla']}, usando valores padrão")
+            valores_padrao = {
+                'USD': {'comercial': 5.20, 'turismo': 5.46},
+                'EUR': {'comercial': 5.65, 'turismo': 5.93},
+                'GBP': {'comercial': 6.45, 'turismo': 6.77}
+            }
+            if moeda['sigla'] in valores_padrao:
+                dados = valores_padrao[moeda['sigla']]
+                cotacoes[moeda['sigla']] = {
+                    'comercial': dados['comercial'],
+                    'turismo': dados['turismo'],
+                    'simbolo': moeda['simbolo'],
+                    'nome': moeda['nome']
+                }
+    
+    logging.info(f"Cotações obtidas para: {list(cotacoes.keys())}")
     return cotacoes
 
 def plot_to_base64(df):
@@ -128,10 +162,22 @@ def api_converter():
         valor = float(request.args.get('valor', 1))
         tipo_taxa = request.args.get('tipo', 'comercial')  # comercial, turismo, media
         
+        # Validar parâmetros
+        if valor <= 0:
+            return jsonify({'error': 'Valor deve ser maior que zero'}), 400
+            
         cotacoes = obter_todas_cotacoes()
         
+        # Log para debug
+        logging.info(f"Convertendo {valor} de {moeda_origem} para {moeda_destino} usando taxa {tipo_taxa}")
+        logging.info(f"Cotações disponíveis: {list(cotacoes.keys())}")
+        
+        # Se as moedas são iguais, retorna o mesmo valor
+        if moeda_origem == moeda_destino:
+            resultado = valor
+            
         # Conversão de Real para moeda estrangeira
-        if moeda_origem == 'BRL' and moeda_destino in cotacoes:
+        elif moeda_origem == 'BRL' and moeda_destino in cotacoes:
             taxa = cotacoes[moeda_destino][tipo_taxa]
             resultado = valor / taxa
             
@@ -149,19 +195,24 @@ def api_converter():
             resultado = valor_real / taxa_destino
             
         else:
-            return jsonify({'error': 'Moeda não suportada'}), 400
+            return jsonify({'error': f'Conversão não suportada: {moeda_origem} -> {moeda_destino}'}), 400
             
         return jsonify({
             'valor_original': valor,
             'moeda_origem': moeda_origem,
             'moeda_destino': moeda_destino,
-            'resultado': round(resultado, 4),
+            'resultado': round(resultado, 6),
             'tipo_taxa': tipo_taxa,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'sucesso': True
         })
         
+    except ValueError as e:
+        logging.error(f"Erro de valor na conversão: {e}")
+        return jsonify({'error': 'Valor inválido fornecido'}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logging.error(f"Erro na conversão: {e}")
+        return jsonify({'error': f'Erro interno do servidor: {str(e)}'}), 500
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
