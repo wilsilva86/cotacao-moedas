@@ -1,7 +1,7 @@
 import os
 import io
 import base64
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -71,20 +71,6 @@ def obter_historico_moeda(moeda_info, dias):
         logging.error(f"Erro no histórico: {e}")
         return None
 
-def obter_todas_cotacoes():
-    """Obtém cotações atuais de todas as moedas para o conversor"""
-    cotacoes = {}
-    for key, moeda in MOEDAS.items():
-        cotacao = obter_cotacao_atual(moeda)
-        if cotacao:
-            cotacoes[moeda['sigla']] = {
-                'comercial': cotacao['comercial'],
-                'turismo': cotacao['turismo'],
-                'simbolo': moeda['simbolo'],
-                'nome': moeda['nome']
-            }
-    return cotacoes
-
 def plot_to_base64(df):
     plt.figure(figsize=(10,6), facecolor='#1a1a1a')
     ax = plt.gca()
@@ -113,56 +99,6 @@ def plot_to_base64(df):
     plt.close()
     return base64.b64encode(buffer.getvalue()).decode('utf-8')
 
-@app.route('/api/cotacoes')
-def api_cotacoes():
-    """API endpoint para obter cotações atuais"""
-    cotacoes = obter_todas_cotacoes()
-    return jsonify(cotacoes)
-
-@app.route('/api/converter')
-def api_converter():
-    """API endpoint para conversão de moedas"""
-    try:
-        moeda_origem = request.args.get('origem', 'BRL')
-        moeda_destino = request.args.get('destino', 'USD')
-        valor = float(request.args.get('valor', 1))
-        tipo_taxa = request.args.get('tipo', 'comercial')  # comercial, turismo, media
-        
-        cotacoes = obter_todas_cotacoes()
-        
-        # Conversão de Real para moeda estrangeira
-        if moeda_origem == 'BRL' and moeda_destino in cotacoes:
-            taxa = cotacoes[moeda_destino][tipo_taxa]
-            resultado = valor / taxa
-            
-        # Conversão de moeda estrangeira para Real
-        elif moeda_destino == 'BRL' and moeda_origem in cotacoes:
-            taxa = cotacoes[moeda_origem][tipo_taxa]
-            resultado = valor * taxa
-            
-        # Conversão entre moedas estrangeiras (via Real)
-        elif moeda_origem in cotacoes and moeda_destino in cotacoes:
-            # Primeiro converte para Real, depois para a moeda de destino
-            taxa_origem = cotacoes[moeda_origem][tipo_taxa]
-            taxa_destino = cotacoes[moeda_destino][tipo_taxa]
-            valor_real = valor * taxa_origem
-            resultado = valor_real / taxa_destino
-            
-        else:
-            return jsonify({'error': 'Moeda não suportada'}), 400
-            
-        return jsonify({
-            'valor_original': valor,
-            'moeda_origem': moeda_origem,
-            'moeda_destino': moeda_destino,
-            'resultado': round(resultado, 4),
-            'tipo_taxa': tipo_taxa,
-            'timestamp': datetime.now().isoformat()
-        })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     contexto = {
@@ -171,8 +107,7 @@ def index():
         'error': None,
         'cotacao': None,
         'graph': None,
-        'atualizacao': None,
-        'cotacoes_conversor': obter_todas_cotacoes()
+        'atualizacao': None
     }
 
     if request.method == 'POST':
@@ -200,4 +135,4 @@ def index():
     return render_template('index.html', **contexto)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

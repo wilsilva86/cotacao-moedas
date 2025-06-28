@@ -14,7 +14,6 @@
             --error: #e74c3c;
             --text: #ffffff;
             --text-secondary: #b3b3b3;
-            --accent: #f39c12;
         }
 
         * {
@@ -32,7 +31,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
             background: var(--surface);
             border-radius: 12px;
@@ -53,46 +52,6 @@
             align-items: center;
             gap: 1rem;
             justify-content: center;
-        }
-
-        .tabs {
-            display: flex;
-            margin-bottom: 2rem;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #2d2d2d;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 1rem;
-            background: #2d2d2d;
-            color: var(--text-secondary);
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .tab.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        .tab:hover:not(.active) {
-            background: #3d3d3d;
-            color: var(--text);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
         }
 
         .grid {
@@ -171,127 +130,6 @@
             border-top: 1px solid #3d3d3d;
         }
 
-        /* Estilos do Conversor */
-        .conversor-container {
-            display: grid;
-            gap: 2rem;
-            grid-template-columns: 1fr 1fr;
-            align-items: start;
-        }
-
-        .conversor-input {
-            background: #2d2d2d;
-            border-radius: 8px;
-            padding: 1.5rem;
-            border: 1px solid #3d3d3d;
-        }
-
-        .input-group {
-            margin-bottom: 1rem;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .input-group input, .input-group select {
-            width: 100%;
-            padding: 0.75rem;
-            background: #1e1e1e;
-            border: 1px solid #3d3d3d;
-            border-radius: 6px;
-            color: var(--text);
-            font-size: 1rem;
-        }
-
-        .input-group input:focus, .input-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .swap-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: all 0.3s;
-            margin: 1rem auto;
-            display: block;
-        }
-
-        .swap-btn:hover {
-            background: #e67e22;
-            transform: rotate(180deg);
-        }
-
-        .resultado {
-            background: linear-gradient(135deg, var(--secondary), #27ae60);
-            border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
-            color: white;
-        }
-
-        .resultado-valor {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin: 1rem 0;
-        }
-
-        .resultado-info {
-            opacity: 0.9;
-            font-size: 0.9rem;
-        }
-
-        .taxa-tipo {
-            display: flex;
-            gap: 0.5rem;
-            margin: 1rem 0;
-        }
-
-        .taxa-btn {
-            flex: 1;
-            padding: 0.5rem;
-            background: #3d3d3d;
-            color: var(--text-secondary);
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
-        }
-
-        .taxa-btn.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        .cotacoes-rapidas {
-            display: grid;
-            gap: 1rem;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            margin-top: 1rem;
-        }
-
-        .cotacao-rapida {
-            background: #2d2d2d;
-            padding: 1rem;
-            border-radius: 6px;
-            text-align: center;
-        }
-
-        .loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -304,18 +142,6 @@
             .card {
                 padding: 1rem;
             }
-
-            .conversor-container {
-                grid-template-columns: 1fr;
-            }
-
-            .tabs {
-                flex-direction: column;
-            }
-
-            .resultado-valor {
-                font-size: 2rem;
-            }
         }
     </style>
 </head>
@@ -326,18 +152,6 @@
                 <i class="fas fa-chart-line"></i>
                 Cotação de moedas
             </h1>
-        </div>
-
-        <!-- Tabs de Navegação -->
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('analise')">
-                <i class="fas fa-chart-bar"></i>
-                Análise de Cotações
-            </button>
-            <button class="tab" onclick="showTab('conversor')">
-                <i class="fas fa-exchange-alt"></i>
-                Conversor de Moedas
-            </button>
         </div>
 
         {% if error %}
@@ -352,169 +166,102 @@
         </div>
         {% endif %}
 
-        <!-- Tab de Análise de Cotações -->
-        <div id="analise" class="tab-content active">
-            <form method="POST">
-                <!-- Seção Moedas -->
-                <div style="margin: 2rem 0;">
-                    <h3 style="color: var(--primary); margin-bottom: 1rem;">Selecione a Moeda</h3>
-                    <div class="grid">
-                        {% for key, moeda in moedas.items() %}
-                        <label>
-                            <input type="radio" name="moeda" value="{{ key }}" hidden>
-                            <div class="card">
-                                <div class="card-content">
-                                    <i class="icon fas {{
-                                        'fa-dollar-sign' if moeda.sigla == 'USD'
-                                        else 'fa-euro-sign' if moeda.sigla == 'EUR'
-                                        else 'fa-sterling-sign'
-                                    }}"></i>
-                                    <div>
-                                        <div class="valor">{{ moeda.nome }}</div>
-                                        <div style="color: var(--text-secondary);">{{ moeda.simbolo }}</div>
-                                    </div>
+        <form method="POST">
+            <!-- Seção Moedas -->
+            <div style="margin: 2rem 0;">
+                <h3 style="color: var(--primary); margin-bottom: 1rem;">Selecione a Moeda</h3>
+                <div class="grid">
+                    {% for key, moeda in moedas.items() %}
+                    <label>
+                        <input type="radio" name="moeda" value="{{ key }}" hidden>
+                        <div class="card">
+                            <div class="card-content">
+                                <i class="icon fas {{
+                                    'fa-dollar-sign' if moeda.sigla == 'USD'
+                                    else 'fa-euro-sign' if moeda.sigla == 'EUR'
+                                    else 'fa-sterling-sign'
+                                }}"></i>
+                                <div>
+                                    <div class="valor">{{ moeda.nome }}</div>
+                                    <div style="color: var(--text-secondary);">{{ moeda.simbolo }}</div>
                                 </div>
                             </div>
-                        </label>
-                        {% endfor %}
-                    </div>
+                        </div>
+                    </label>
+                    {% endfor %}
                 </div>
+            </div>
 
-                <!-- Seção Períodos -->
-                <div style="margin: 2rem 0;">
-                    <h3 style="color: var(--primary); margin-bottom: 1rem;">Selecione o Período</h3>
-                    <div class="grid">
-                        {% for key, periodo in periodos.items() %}
-                        <label>
-                            <input type="radio" name="periodo" value="{{ key }}" hidden>
-                            <div class="card">
-                                <div class="card-content">
-                                    <i class="icon fas fa-calendar-alt"></i>
-                                    <div>
-                                        <div class="valor">{{ periodo.nome }}</div>
-                                        <div style="color: var(--text-secondary);">{{ periodo.dias }} dias</div>
-                                    </div>
+            <!-- Seção Períodos -->
+            <div style="margin: 2rem 0;">
+                <h3 style="color: var(--primary); margin-bottom: 1rem;">Selecione o Período</h3>
+                <div class="grid">
+                    {% for key, periodo in periodos.items() %}
+                    <label>
+                        <input type="radio" name="periodo" value="{{ key }}" hidden>
+                        <div class="card">
+                            <div class="card-content">
+                                <i class="icon fas fa-calendar-alt"></i>
+                                <div>
+                                    <div class="valor">{{ periodo.nome }}</div>
+                                    <div style="color: var(--text-secondary);">{{ periodo.dias }} dias</div>
                                 </div>
                             </div>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <button type="submit">
-                    <i class="fas fa-chart-bar"></i>
-                    Gerar Análise
-                </button>
-            </form>
-
-            {% if cotacao %}
-            <div class="info-box">
-                <h3 style="color: var(--primary); margin-bottom: 1.5rem;">Cotações Atuais</h3>
-                <div class="grid" style="gap: 1rem;">
-                    <div class="card">
-                        <div class="card-content">
-                            <i class="icon fas fa-building"></i>
-                            <div>
-                                <div style="color: var(--text-secondary);">Comercial</div>
-                                <div class="valor">R$ {{ "%.3f"|format(cotacao.comercial)|replace(".", ",") }}</div>
-                            </div>
                         </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-content">
-                            <i class="icon fas fa-suitcase-rolling"></i>
-                            <div>
-                                <div style="color: var(--text-secondary);">Turismo</div>
-                                <div class="valor">R$ {{ "%.3f"|format(cotacao.turismo)|replace(".", ",") }}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card" style="border-color: var(--secondary);">
-                        <div class="card-content">
-                            <i class="icon fas fa-balance-scale" style="color: var(--secondary);"></i>
-                            <div>
-                                <div style="color: var(--text-secondary);">Média</div>
-                                <div class="valor destaque">R$ {{ "%.3f"|format(cotacao.media)|replace(".", ",") }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            {% if graph %}
-            <div class="info-box">
-                <h3 style="color: var(--primary); margin-bottom: 1.5rem;">Análise Histórica</h3>
-                <img src="data:image/png;base64,{{ graph }}" alt="Gráfico" style="width:100%; border-radius: 8px;">
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Tab do Conversor -->
-        <div id="conversor" class="tab-content">
-            <h3 style="color: var(--primary); margin-bottom: 2rem;">Conversor de Moedas em Tempo Real</h3>
-            
-            <div class="conversor-container">
-                <div class="conversor-input">
-                    <div class="input-group">
-                        <label for="valor">Valor</label>
-                        <input type="number" id="valor" value="1" min="0" step="0.01" onchange="converter()">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="moeda-origem">De</label>
-                        <select id="moeda-origem" onchange="converter()">
-                            <option value="BRL">Real Brasileiro (R$)</option>
-                            <option value="USD">Dólar Americano (US$)</option>
-                            <option value="EUR">Euro (€)</option>
-                            <option value="GBP">Libra Esterlina (£)</option>
-                        </select>
-                    </div>
-
-                    <button class="swap-btn" onclick="trocarMoedas()">
-                        <i class="fas fa-exchange-alt"></i>
-                    </button>
-
-                    <div class="input-group">
-                        <label for="moeda-destino">Para</label>
-                        <select id="moeda-destino" onchange="converter()">
-                            <option value="USD">Dólar Americano (US$)</option>
-                            <option value="BRL">Real Brasileiro (R$)</option>
-                            <option value="EUR">Euro (€)</option>
-                            <option value="GBP">Libra Esterlina (£)</option>
-                        </select>
-                    </div>
-
-                    <div class="taxa-tipo">
-                        <button type="button" class="taxa-btn active" data-tipo="comercial" onclick="selecionarTaxa('comercial')">
-                            Comercial
-                        </button>
-                        <button type="button" class="taxa-btn" data-tipo="turismo" onclick="selecionarTaxa('turismo')">
-                            Turismo
-                        </button>
-                        <button type="button" class="taxa-btn" data-tipo="media" onclick="selecionarTaxa('media')">
-                            Média
-                        </button>
-                    </div>
-                </div>
-
-                <div class="resultado" id="resultado">
-                    <i class="fas fa-calculator" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                    <div class="resultado-valor" id="resultado-valor">-</div>
-                    <div class="resultado-info" id="resultado-info">Insira um valor para converter</div>
+                    </label>
+                    {% endfor %}
                 </div>
             </div>
 
-            <!-- Cotações Rápidas -->
-            <div class="info-box">
-                <h3 style="color: var(--primary); margin-bottom: 1rem;">Cotações Atuais</h3>
-                <div class="cotacoes-rapidas" id="cotacoes-rapidas">
-                    <!-- Preenchido via JavaScript -->
+            <button type="submit">
+                <i class="fas fa-chart-bar"></i>
+                Gerar Análise
+            </button>
+        </form>
+
+        {% if cotacao %}
+        <div class="info-box">
+            <h3 style="color: var(--primary); margin-bottom: 1.5rem;">Cotações Atuais</h3>
+            <div class="grid" style="gap: 1rem;">
+                <div class="card">
+                    <div class="card-content">
+                        <i class="icon fas fa-building"></i>
+                        <div>
+                            <div style="color: var(--text-secondary);">Comercial</div>
+                            <div class="valor">R$ {{ "%.3f"|format(cotacao.comercial)|replace(".", ",") }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-content">
+                        <i class="icon fas fa-suitcase-rolling"></i>
+                        <div>
+                            <div style="color: var(--text-secondary);">Turismo</div>
+                            <div class="valor">R$ {{ "%.3f"|format(cotacao.turismo)|replace(".", ",") }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="border-color: var(--secondary);">
+                    <div class="card-content">
+                        <i class="icon fas fa-balance-scale" style="color: var(--secondary);"></i>
+                        <div>
+                            <div style="color: var(--text-secondary);">Média</div>
+                            <div class="valor destaque">R$ {{ "%.3f"|format(cotacao.media)|replace(".", ",") }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        {% endif %}
+
+        {% if graph %}
+        <div class="info-box">
+            <h3 style="color: var(--primary); margin-bottom: 1.5rem;">Análise Histórica</h3>
+            <img src="data:image/png;base64,{{ graph }}" alt="Gráfico" style="width:100%; border-radius: 8px;">
+        </div>
+        {% endif %}
 
         <div class="footer">
             <p>Desenvolvido por 👽 William C. Silva</p>
@@ -532,76 +279,5 @@
             {% endif %}
         </div>
     </div>
-
-    <script>
-        let cotacoes = {};
-        let tipoTaxaAtual = 'comercial';
-
-        // Função para trocar entre abas
-        function showTab(tabName) {
-            // Esconder todas as abas
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Remover classe active de todos os botões
-            document.querySelectorAll('.tab').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Mostrar aba selecionada
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-
-            // Se for aba do conversor, carregar cotações
-            if (tabName === 'conversor') {
-                carregarCotacoes();
-            }
-        }
-
-        // Função para carregar cotações via API
-        async function carregarCotacoes() {
-            try {
-                const response = await fetch('/api/cotacoes');
-                cotacoes = await response.json();
-                atualizarCotacoesRapidas();
-                converter(); // Atualizar conversão se já houver valores
-            } catch (error) {
-                console.error('Erro ao carregar cotações:', error);
-            }
-        }
-
-        // Função para atualizar as cotações rápidas
-        function atualizarCotacoesRapidas() {
-            const container = document.getElementById('cotacoes-rapidas');
-            container.innerHTML = '';
-
-            Object.entries(cotacoes).forEach(([sigla, dados]) => {
-                const div = document.createElement('div');
-                div.className = 'cotacao-rapida';
-                div.innerHTML = `
-                    <div style="font-weight: bold; margin-bottom: 0.5rem;">${dados.simbolo} ${dados.nome}</div>
-                    <div>Comercial: R$ ${dados.comercial.toFixed(3).replace('.', ',')}</div>
-                    <div>Turismo: R$ ${dados.turismo.toFixed(3).replace('.', ',')}</div>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        // Função para converter moedas
-        async function converter() {
-            const valor = parseFloat(document.getElementById('valor').value) || 0;
-            const origem = document.getElementById('moeda-origem').value;
-            const destino = document.getElementById('moeda-destino').value;
-
-            if (valor <= 0) {
-                document.getElementById('resultado-valor').textContent = '-';
-                document.getElementById('resultado-info').textContent = 'Insira um valor para converter';
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/converter?origem=${origem}&destino=${destino}&valor=${valor}&tipo=${tipoTaxaAtual}`);
-                const data = await response.json();
-
-                if (data.
+</body>
+</html>
